@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: sans-serif; }
+  .container {
+    display: flex;
+    gap: 10px;
+  }
+  .box {
+    flex: 1;
+    border: 1px solid #ccc;
+    padding: 10px;
+  }
+  @media (max-width: 600px) {
+    .container { flex-direction: column; }
+  }
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <!-- 左：ポイ活MAX -->
+  <div class="box">
+    <h2>ポイ活MAX</h2>
+    基本料金：<input type="number" id="leftBase" value="7480"><br><br>
+
+    <label>
+      <input type="checkbox" class="leftDiscount" value="1100">
+      みんなドコモ割（-1100円）
+    </label><br>
+
+    <label>
+      <input type="checkbox" class="leftDiscount" value="550">
+      dカード割（-550円）
+    </label><br><br>
+
+    <strong>最終金額：<span id="leftResult">7480</span>円</strong>
+  </div>
+
+  <!-- 右：他プラン -->
+  <div class="box">
+    <h2><input placeholder="プラン名"></h2>
+    基本料金：<input type="number" id="rightBase"><br><br>
+
+    <strong>最終金額：<span id="rightResult">0</span>円</strong>
+  </div>
+
+</div>
+
+<script>
+function calc() {
+  // 左
+  let left = Number(leftBase.value);
+  document.querySelectorAll('.leftDiscount').forEach(d => {
+    if (d.checked) left -= Number(d.value);
+  });
+  leftResult.textContent = left;
+
+  // 右
+  rightResult.textContent = rightBase.value || 0;
+}
+
+document.addEventListener('input', calc);
+</script>
+</body>
+</html>
