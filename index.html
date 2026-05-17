@@ -32,6 +32,7 @@
 
 *{
   box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
 }
 
 body{
@@ -67,7 +68,6 @@ h1{
 table{
   width:100%;
   border-collapse:collapse;
-  table-layout:fixed;
 }
 
 thead{
@@ -105,14 +105,6 @@ input{
   padding:0;
 }
 
-.date input{
-  font-weight:600;
-}
-
-.item input{
-  color:var(--text);
-}
-
 .amount input{
   text-align:right;
   font-weight:700;
@@ -130,6 +122,28 @@ input{
 
 .plus input{
   color:var(--plus);
+}
+
+.summary{
+  margin-bottom:14px;
+}
+
+.summaryCard{
+  background:var(--card);
+  border-radius:16px;
+  padding:14px;
+  border:1px solid var(--line);
+}
+
+.summaryLabel{
+  font-size:12px;
+  color:var(--sub);
+  margin-bottom:6px;
+}
+
+.summaryValue{
+  font-size:20px;
+  font-weight:700;
 }
 
 .bottomBar{
@@ -167,63 +181,32 @@ input{
   color:white;
 }
 
-.summary{
-  margin-bottom:14px;
-  display:flex;
-  gap:10px;
-}
-
-.summaryCard{
-  flex:1;
+.swipeRow{
+  transition:transform .2s ease;
   background:var(--card);
-  border-radius:16px;
-  padding:14px;
-  border:1px solid var(--line);
 }
 
-.summaryLabel{
-  font-size:12px;
-  color:var(--sub);
-  margin-bottom:6px;
+.dragging{
+  opacity:.5;
 }
 
-.summaryValue{
-  font-size:20px;
+.deleteBackground{
+  position:absolute;
+  right:0;
+  top:0;
+  bottom:0;
+  width:90px;
+  background:#ff3b30;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
   font-weight:700;
 }
 
-.actions{
-  white-space:nowrap;
-  text-align:right;
-}
-
-.miniBtn{
-  border:none;
-  background:#e9e9ee;
-  color:#333;
-  border-radius:8px;
-  padding:6px 8px;
-  margin-left:4px;
-  font-size:12px;
-}
-
-.deleteBtn{
-  border:none;
-  background:#ff3b30;
-  color:white;
-  border-radius:8px;
-  padding:6px 8px;
-  margin-left:4px;
-  font-size:12px;
-}
-
-@media (prefers-color-scheme: dark){
-
-  .miniBtn{
-    background:#3a3a3c;
-    color:white;
-  }
-
+.rowWrapper{
+  position:relative;
+  overflow:hidden;
 }
 
 </style>
@@ -252,7 +235,6 @@ input{
           <th>項目</th>
           <th>支出入</th>
           <th>残高</th>
-          <th></th>
         </tr>
       </thead>
 
@@ -294,57 +276,60 @@ function renderTable(){
 
     balance += Number(row.amount);
 
-    const tr = document.createElement("tr");
+    const amountClass =
+      row.amount >= 0 ? "plus" : "minus";
 
-    const amountClass = row.amount >= 0 ? "plus" : "minus";
+    const wrapper = document.createElement("tr");
 
-    tr.innerHTML = `
+    wrapper.className = "rowWrapper";
+    wrapper.draggable = true;
 
-      <td class="date">
-        <input
-          value="${row.date}"
-          onchange="updateRow(${index}, 'date', this.value)">
-      </td>
+    wrapper.innerHTML = `
 
-      <td class="item">
-        <input
-          value="${row.item}"
-          onchange="updateRow(${index}, 'item', this.value)">
-      </td>
+      <td colspan="4" style="padding:0;">
 
-      <td class="amount ${amountClass}">
-        <input
-          type="number"
-          value="${row.amount}"
-          onchange="updateRow(${index}, 'amount', this.value)">
-      </td>
+        <div class="deleteBackground">
+          削除
+        </div>
 
-      <td class="balance">
-        ${balance.toLocaleString()}円
-      </td>
+        <table style="width:100%;">
+          <tr class="swipeRow">
 
-      <td class="actions">
+            <td>
+              <input
+                value="${row.date}"
+                onchange="updateRow(${index}, 'date', this.value)">
+            </td>
 
-        <button class="miniBtn"
-          onclick="moveUp(${index})">
-          ↑
-        </button>
+            <td>
+              <input
+                value="${row.item}"
+                onchange="updateRow(${index}, 'item', this.value)">
+            </td>
 
-        <button class="miniBtn"
-          onclick="moveDown(${index})">
-          ↓
-        </button>
+            <td class="amount ${amountClass}">
+              <input
+                type="number"
+                value="${row.amount}"
+                onchange="updateRow(${index}, 'amount', this.value)">
+            </td>
 
-        <button class="deleteBtn"
-          onclick="deleteRow(${index})">
-          ×
-        </button>
+            <td class="balance">
+              ${balance.toLocaleString()}円
+            </td>
+
+          </tr>
+        </table>
 
       </td>
 
     `;
 
-    tbody.appendChild(tr);
+    tbody.appendChild(wrapper);
+
+    setupSwipe(wrapper,index);
+
+    setupDrag(wrapper,index);
 
   });
 
@@ -352,6 +337,97 @@ function renderTable(){
     balance.toLocaleString() + "円";
 
   saveData();
+
+}
+
+function setupSwipe(wrapper,index){
+
+  const swipeRow = wrapper.querySelector(".swipeRow");
+
+  let startX = 0;
+  let currentX = 0;
+
+  swipeRow.addEventListener("touchstart",(e)=>{
+
+    startX = e.touches[0].clientX;
+
+  });
+
+  swipeRow.addEventListener("touchmove",(e)=>{
+
+    currentX = e.touches[0].clientX;
+
+    const diff = currentX - startX;
+
+    if(diff < 0){
+
+      swipeRow.style.transform =
+        `translateX(${diff}px)`;
+
+    }
+
+  });
+
+  swipeRow.addEventListener("touchend",()=>{
+
+    const diff = currentX - startX;
+
+    if(diff < -100){
+
+      if(confirm("削除しますか？")){
+
+        data.splice(index,1);
+
+        renderTable();
+
+      }
+
+    }else{
+
+      swipeRow.style.transform =
+        "translateX(0px)";
+
+    }
+
+  });
+
+}
+
+let dragIndex = null;
+
+function setupDrag(wrapper,index){
+
+  wrapper.addEventListener("dragstart",()=>{
+
+    dragIndex = index;
+
+    wrapper.classList.add("dragging");
+
+  });
+
+  wrapper.addEventListener("dragend",()=>{
+
+    wrapper.classList.remove("dragging");
+
+  });
+
+  wrapper.addEventListener("dragover",(e)=>{
+
+    e.preventDefault();
+
+  });
+
+  wrapper.addEventListener("drop",()=>{
+
+    if(dragIndex === null) return;
+
+    const movedItem = data.splice(dragIndex,1)[0];
+
+    data.splice(index,0,movedItem);
+
+    renderTable();
+
+  });
 
 }
 
@@ -374,40 +450,6 @@ function addRow(){
     item:"",
     amount:0
   });
-
-  renderTable();
-
-}
-
-function deleteRow(index){
-
-  if(confirm("この行を削除しますか？")){
-
-    data.splice(index,1);
-
-    renderTable();
-
-  }
-
-}
-
-function moveUp(index){
-
-  if(index === 0) return;
-
-  [data[index - 1], data[index]] =
-  [data[index], data[index - 1]];
-
-  renderTable();
-
-}
-
-function moveDown(index){
-
-  if(index === data.length - 1) return;
-
-  [data[index + 1], data[index]] =
-  [data[index], data[index + 1]];
 
   renderTable();
 
