@@ -192,6 +192,40 @@ input{
   font-weight:700;
 }
 
+.actions{
+  white-space:nowrap;
+  text-align:right;
+}
+
+.miniBtn{
+  border:none;
+  background:#e9e9ee;
+  color:#333;
+  border-radius:8px;
+  padding:6px 8px;
+  margin-left:4px;
+  font-size:12px;
+}
+
+.deleteBtn{
+  border:none;
+  background:#ff3b30;
+  color:white;
+  border-radius:8px;
+  padding:6px 8px;
+  margin-left:4px;
+  font-size:12px;
+}
+
+@media (prefers-color-scheme: dark){
+
+  .miniBtn{
+    background:#3a3a3c;
+    color:white;
+  }
+
+}
+
 </style>
 </head>
 
@@ -218,6 +252,7 @@ input{
           <th>項目</th>
           <th>支出入</th>
           <th>残高</th>
+          <th></th>
         </tr>
       </thead>
 
@@ -288,6 +323,25 @@ function renderTable(){
         ${balance.toLocaleString()}円
       </td>
 
+      <td class="actions">
+
+        <button class="miniBtn"
+          onclick="moveUp(${index})">
+          ↑
+        </button>
+
+        <button class="miniBtn"
+          onclick="moveDown(${index})">
+          ↓
+        </button>
+
+        <button class="deleteBtn"
+          onclick="deleteRow(${index})">
+          ×
+        </button>
+
+      </td>
+
     `;
 
     tbody.appendChild(tr);
@@ -320,6 +374,40 @@ function addRow(){
     item:"",
     amount:0
   });
+
+  renderTable();
+
+}
+
+function deleteRow(index){
+
+  if(confirm("この行を削除しますか？")){
+
+    data.splice(index,1);
+
+    renderTable();
+
+  }
+
+}
+
+function moveUp(index){
+
+  if(index === 0) return;
+
+  [data[index - 1], data[index]] =
+  [data[index], data[index - 1]];
+
+  renderTable();
+
+}
+
+function moveDown(index){
+
+  if(index === data.length - 1) return;
+
+  [data[index + 1], data[index]] =
+  [data[index], data[index + 1]];
 
   renderTable();
 
