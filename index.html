@@ -10,12 +10,12 @@
 
 :root{
   --bg:#f2f2f7;
-  --card:#ffffff;
+  --card:#fff;
   --line:#e5e5ea;
   --text:#111;
   --sub:#777;
-  --minus:#ff3b30;
   --plus:#34c759;
+  --minus:#ff3b30;
 }
 
 @media (prefers-color-scheme: dark){
@@ -37,13 +37,12 @@
 body{
   margin:0;
   background:var(--bg);
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   padding:
     env(safe-area-inset-top)
     12px
-    calc(90px + env(safe-area-inset-bottom))
-    12px;
+    calc(90px + env(safe-area-inset-bottom));
 }
 
 .container{
@@ -52,9 +51,8 @@ body{
 }
 
 h1{
-  font-size:26px;
-  margin:8px 4px 16px;
-  font-weight:700;
+  font-size:24px;
+  margin:10px 4px 16px;
 }
 
 .card{
@@ -73,44 +71,34 @@ table{
 thead{
   position:sticky;
   top:0;
-  z-index:10;
+  z-index:5;
 }
 
 th{
-  background:var(--card);
+  font-size:11px;
   color:var(--sub);
-  font-size:12px;
-  font-weight:600;
-  padding:12px 8px;
+  padding:10px 6px;
+  background:var(--card);
   border-bottom:1px solid var(--line);
 }
 
 td{
-  padding:12px 8px;
   border-bottom:1px solid var(--line);
-  font-size:14px;
+  padding:10px 6px;
+  font-size:13px;
 }
 
 tr:last-child td{
   border-bottom:none;
 }
 
-input{
+input,select{
   width:100%;
   border:none;
   background:transparent;
   outline:none;
   color:var(--text);
-  font-size:14px;
-  padding:0;
-}
-
-.date input{
-  font-weight:600;
-}
-
-.item input{
-  color:var(--text);
+  font-size:13px;
 }
 
 .amount input{
@@ -124,12 +112,12 @@ input{
   white-space:nowrap;
 }
 
-.minus input{
-  color:var(--minus);
+.plus{
+  color:var(--plus);
 }
 
-.plus input{
-  color:var(--plus);
+.minus{
+  color:var(--minus);
 }
 
 .bottomBar{
@@ -161,24 +149,18 @@ input{
   border:none;
   border-radius:16px;
   padding:16px;
-  font-size:17px;
-  font-weight:700;
   background:#007aff;
   color:white;
+  font-size:17px;
+  font-weight:700;
 }
 
 .summary{
-  margin-bottom:14px;
-  display:flex;
-  gap:10px;
-}
-
-.summaryCard{
-  flex:1;
   background:var(--card);
+  border:1px solid var(--line);
   border-radius:16px;
   padding:14px;
-  border:1px solid var(--line);
+  margin-bottom:14px;
 }
 
 .summaryLabel{
@@ -188,8 +170,13 @@ input{
 }
 
 .summaryValue{
-  font-size:20px;
+  font-size:24px;
   font-weight:700;
+}
+
+.typeSelect{
+  font-size:12px;
+  padding:0;
 }
 
 </style>
@@ -202,10 +189,8 @@ input{
   <h1>支出入管理</h1>
 
   <div class="summary">
-    <div class="summaryCard">
-      <div class="summaryLabel">現在残高</div>
-      <div class="summaryValue" id="totalBalance">0円</div>
-    </div>
+    <div class="summaryLabel">現在残高</div>
+    <div class="summaryValue" id="totalBalance">0円</div>
   </div>
 
   <div class="card">
@@ -216,7 +201,8 @@ input{
         <tr>
           <th>日付</th>
           <th>項目</th>
-          <th>支出入</th>
+          <th>種別</th>
+          <th>金額</th>
           <th>残高</th>
         </tr>
       </thead>
@@ -239,13 +225,114 @@ input{
 
 let data = JSON.parse(localStorage.getItem("moneyData")) || [
 
-  {date:"5/17", item:"開始残高", amount:250086},
-  {date:"5/26", item:"LIFE", amount:-22526},
-  {date:"5/27", item:"三井住友", amount:-113457},
-  {date:"6/10", item:"dカード", amount:-9221},
-  {date:"6/15", item:"給料", amount:200000},
+  {
+    date:"5/17",
+    item:"開始残高",
+    type:"即時",
+    amount:250086
+  },
+
+  {
+    date:"5/20",
+    item:"スーパー",
+    type:"LIFE",
+    amount:-5000
+  },
+
+  {
+    date:"5/21",
+    item:"Amazon",
+    type:"NL",
+    amount:-12000
+  },
+
+  {
+    date:"5/22",
+    item:"コンビニ",
+    type:"d",
+    amount:-800
+  },
+
+  {
+    date:"5/26",
+    item:"LIFE引落",
+    type:"即時",
+    amount:-22526
+  },
+
+  {
+    date:"5/27",
+    item:"三井住友引落",
+    type:"即時",
+    amount:-113457
+  },
+
+  {
+    date:"6/10",
+    item:"dカード引落",
+    type:"即時",
+    amount:-9221
+  }
 
 ];
+
+function calculateBalances(){
+
+  let balance = 0;
+
+  let pending = {
+    LIFE:0,
+    NL:0,
+    d:0
+  };
+
+  return data.map(row=>{
+
+    let amount = Number(row.amount);
+
+    // 即時反映
+    if(row.type === "即時"){
+      balance += amount;
+    }
+
+    // LIFE積立
+    else if(row.type === "LIFE"){
+      pending.LIFE += amount;
+    }
+
+    // NL積立
+    else if(row.type === "NL"){
+      pending.NL += amount;
+    }
+
+    // d積立
+    else if(row.type === "d"){
+      pending.d += amount;
+    }
+
+    // LIFE引落
+    if(row.item.includes("LIFE引落")){
+      balance += pending.LIFE;
+      pending.LIFE = 0;
+    }
+
+    // 三井住友引落
+    if(row.item.includes("三井住友引落")){
+      balance += pending.NL;
+      pending.NL = 0;
+    }
+
+    // dカード引落
+    if(row.item.includes("dカード引落")){
+      balance += pending.d;
+      pending.d = 0;
+    }
+
+    return balance;
+
+  });
+
+}
 
 function renderTable(){
 
@@ -253,39 +340,67 @@ function renderTable(){
 
   tbody.innerHTML = "";
 
-  let balance = 0;
+  const balances = calculateBalances();
 
   data.forEach((row,index)=>{
 
-    balance += Number(row.amount);
+    const cls = row.amount >= 0
+      ? "plus"
+      : "minus";
 
     const tr = document.createElement("tr");
 
-    const amountClass = row.amount >= 0 ? "plus" : "minus";
-
     tr.innerHTML = `
 
-      <td class="date">
+      <td>
         <input
           value="${row.date}"
-          onchange="updateRow(${index}, 'date', this.value)">
+          onchange="updateRow(${index},'date',this.value)">
       </td>
 
-      <td class="item">
+      <td>
         <input
           value="${row.item}"
-          onchange="updateRow(${index}, 'item', this.value)">
+          onchange="updateRow(${index},'item',this.value)">
       </td>
 
-      <td class="amount ${amountClass}">
+      <td>
+        <select
+          class="typeSelect"
+          onchange="updateRow(${index},'type',this.value)">
+
+          <option value="即時"
+            ${row.type==="即時"?"selected":""}>
+            即時
+          </option>
+
+          <option value="LIFE"
+            ${row.type==="LIFE"?"selected":""}>
+            LIFE
+          </option>
+
+          <option value="NL"
+            ${row.type==="NL"?"selected":""}>
+            NL
+          </option>
+
+          <option value="d"
+            ${row.type==="d"?"selected":""}>
+            d
+          </option>
+
+        </select>
+      </td>
+
+      <td class="amount ${cls}">
         <input
           type="number"
           value="${row.amount}"
-          onchange="updateRow(${index}, 'amount', this.value)">
+          onchange="updateRow(${index},'amount',this.value)">
       </td>
 
       <td class="balance">
-        ${balance.toLocaleString()}円
+        ${balances[index].toLocaleString()}円
       </td>
 
     `;
@@ -295,7 +410,7 @@ function renderTable(){
   });
 
   document.getElementById("totalBalance").innerText =
-    balance.toLocaleString() + "円";
+    balances[balances.length - 1].toLocaleString() + "円";
 
   saveData();
 
@@ -318,6 +433,7 @@ function addRow(){
   data.push({
     date:"",
     item:"",
+    type:"即時",
     amount:0
   });
 
