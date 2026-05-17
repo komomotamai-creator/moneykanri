@@ -2,15 +2,18 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
 <title>支出入管理</title>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 
 <style>
 
 :root{
   --bg:#f2f2f7;
-  --card:#ffffff;
+  --card:#fff;
   --line:#e5e5ea;
   --text:#111;
   --sub:#777;
@@ -36,16 +39,24 @@
 }
 
 body{
+
   margin:0;
+
   background:var(--bg);
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+
   color:var(--text);
+
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
 
   padding:
     env(safe-area-inset-top)
     12px
     calc(90px + env(safe-area-inset-bottom))
     12px;
+
 }
 
 .container{
@@ -54,7 +65,7 @@ body{
 }
 
 h1{
-  font-size:26px;
+  font-size:28px;
   margin:8px 4px 16px;
   font-weight:700;
 }
@@ -64,10 +75,15 @@ h1{
 }
 
 .summaryCard{
+
   background:var(--card);
+
   border-radius:16px;
+
   padding:14px;
+
   border:1px solid var(--line);
+
 }
 
 .summaryLabel{
@@ -77,15 +93,20 @@ h1{
 }
 
 .summaryValue{
-  font-size:20px;
+  font-size:22px;
   font-weight:700;
 }
 
 .card{
+
   background:var(--card);
+
   border-radius:18px;
+
   overflow:hidden;
+
   border:1px solid var(--line);
+
 }
 
 table{
@@ -100,12 +121,19 @@ thead{
 }
 
 th{
+
   background:var(--card);
+
   color:var(--sub);
+
   font-size:12px;
+
   font-weight:600;
+
   padding:12px 8px;
+
   border-bottom:1px solid var(--line);
+
 }
 
 tbody tr{
@@ -117,13 +145,21 @@ tbody tr:last-child{
 }
 
 input{
+
   width:100%;
+
   border:none;
+
   background:transparent;
+
   outline:none;
+
   color:var(--text);
+
   font-size:14px;
+
   padding:0;
+
 }
 
 .amount input{
@@ -166,10 +202,15 @@ input{
 }
 
 .swipeRow{
+
   position:relative;
+
   z-index:2;
+
   background:var(--card);
+
   transition:transform .2s ease;
+
 }
 
 .deleteBackground{
@@ -195,8 +236,8 @@ input{
 
 }
 
-.dragging{
-  opacity:.5;
+.sortable-ghost{
+  opacity:.3;
 }
 
 .bottomBar{
@@ -212,7 +253,8 @@ input{
     16px
     calc(12px + env(safe-area-inset-bottom));
 
-  background:rgba(255,255,255,0.8);
+  background:
+    rgba(255,255,255,0.8);
 
   backdrop-filter:blur(20px);
 
@@ -221,7 +263,8 @@ input{
 @media (prefers-color-scheme: dark){
 
   .bottomBar{
-    background:rgba(28,28,30,0.8);
+    background:
+      rgba(28,28,30,0.8);
   }
 
 }
@@ -240,11 +283,12 @@ input{
 
   padding:16px;
 
+  background:#007aff;
+
+  color:white;
+
   font-size:17px;
   font-weight:700;
-
-  background:#007aff;
-  color:white;
 
 }
 
@@ -265,8 +309,11 @@ input{
         最終残高
       </div>
 
-      <div class="summaryValue" id="totalBalance">
+      <div class="summaryValue"
+        id="totalBalance">
+
         0円
+
       </div>
 
     </div>
@@ -296,8 +343,11 @@ input{
 
 <div class="bottomBar">
 
-  <button class="addBtn" onclick="addRow()">
+  <button class="addBtn"
+    onclick="addRow()">
+
     ＋ 追加
+
   </button>
 
 </div>
@@ -343,7 +393,9 @@ let data = JSON.parse(
 function renderTable(){
 
   const tbody =
-    document.getElementById("tableBody");
+    document.getElementById(
+      "tableBody"
+    );
 
   tbody.innerHTML = "";
 
@@ -360,8 +412,6 @@ function renderTable(){
 
     const tr =
       document.createElement("tr");
-
-    tr.draggable = true;
 
     tr.innerHTML = `
 
@@ -384,6 +434,7 @@ function renderTable(){
 
               <input
                 value="${row.date}"
+
                 onchange="
                   updateRow(
                     ${index},
@@ -398,6 +449,7 @@ function renderTable(){
 
               <input
                 value="${row.item}"
+
                 onchange="
                   updateRow(
                     ${index},
@@ -408,7 +460,10 @@ function renderTable(){
 
             </div>
 
-            <div class="amount ${amountClass}">
+            <div class="
+              amount
+              ${amountClass}
+            ">
 
               <input
                 type="number"
@@ -426,7 +481,9 @@ function renderTable(){
             </div>
 
             <div class="balance">
+
               ${balance.toLocaleString()}円
+
             </div>
 
           </div>
@@ -440,8 +497,6 @@ function renderTable(){
     tbody.appendChild(tr);
 
     setupSwipe(tr,index);
-
-    setupDrag(tr,index);
 
   });
 
@@ -521,65 +576,6 @@ function setupSwipe(tr,index){
 
 }
 
-let dragIndex = null;
-
-function setupDrag(tr,index){
-
-  tr.addEventListener(
-    "dragstart",
-    ()=>{
-
-      dragIndex = index;
-
-      tr.classList.add("dragging");
-
-    }
-  );
-
-  tr.addEventListener(
-    "dragend",
-    ()=>{
-
-      tr.classList.remove("dragging");
-
-    }
-  );
-
-  tr.addEventListener(
-    "dragover",
-    (e)=>{
-
-      e.preventDefault();
-
-    }
-  );
-
-  tr.addEventListener(
-    "drop",
-    ()=>{
-
-      if(dragIndex === null)
-        return;
-
-      const movedItem =
-        data.splice(
-          dragIndex,
-          1
-        )[0];
-
-      data.splice(
-        index,
-        0,
-        movedItem
-      );
-
-      renderTable();
-
-    }
-  );
-
-}
-
 function updateRow(index,key,value){
 
   if(key === "amount"){
@@ -622,6 +618,46 @@ function saveData(){
 }
 
 renderTable();
+
+new Sortable(
+
+  document.getElementById(
+    "tableBody"
+  ),
+
+  {
+
+    animation:150,
+
+    delay:200,
+
+    delayOnTouchOnly:true,
+
+    ghostClass:"sortable-ghost",
+
+    onEnd:(evt)=>{
+
+      const movedItem =
+        data.splice(
+          evt.oldIndex,
+          1
+        )[0];
+
+      data.splice(
+        evt.newIndex,
+        0,
+        movedItem
+      );
+
+      saveData();
+
+      renderTable();
+
+    }
+
+  }
+
+);
 
 </script>
 
