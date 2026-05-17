@@ -2,95 +2,216 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
 <title>支出入管理</title>
 
 <style>
+
+:root{
+  --bg:#f2f2f7;
+  --card:#ffffff;
+  --line:#e5e5ea;
+  --text:#111;
+  --sub:#777;
+  --minus:#ff3b30;
+  --plus:#34c759;
+}
+
+@media (prefers-color-scheme: dark){
+
+  :root{
+    --bg:#000;
+    --card:#1c1c1e;
+    --line:#2c2c2e;
+    --text:#fff;
+    --sub:#aaa;
+  }
+
+}
+
+*{
+  box-sizing:border-box;
+}
+
 body{
+  margin:0;
+  background:var(--bg);
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  background:#f5f5f5;
-  padding:20px;
-  color:#333;
+  color:var(--text);
+  padding:
+    env(safe-area-inset-top)
+    12px
+    calc(90px + env(safe-area-inset-bottom))
+    12px;
 }
 
 .container{
-  max-width:900px;
+  max-width:430px;
   margin:auto;
 }
 
 h1{
-  margin-bottom:20px;
+  font-size:26px;
+  margin:8px 4px 16px;
+  font-weight:700;
 }
 
 .card{
-  background:white;
-  border-radius:16px;
-  padding:20px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.05);
+  background:var(--card);
+  border-radius:18px;
+  overflow:hidden;
+  border:1px solid var(--line);
 }
 
 table{
   width:100%;
   border-collapse:collapse;
+  table-layout:fixed;
 }
 
-th,td{
-  border-bottom:1px solid #eee;
-  padding:14px;
-  text-align:left;
-  font-size:18px;
+thead{
+  position:sticky;
+  top:0;
+  z-index:10;
 }
 
 th{
-  background:#fafafa;
+  background:var(--card);
+  color:var(--sub);
+  font-size:12px;
+  font-weight:600;
+  padding:12px 8px;
+  border-bottom:1px solid var(--line);
+}
+
+td{
+  padding:12px 8px;
+  border-bottom:1px solid var(--line);
+  font-size:14px;
+}
+
+tr:last-child td{
+  border-bottom:none;
 }
 
 input{
   width:100%;
   border:none;
-  font-size:18px;
   background:transparent;
   outline:none;
+  color:var(--text);
+  font-size:14px;
+  padding:0;
 }
 
-.amount.minus{
-  color:#d33;
-  font-weight:bold;
+.date input{
+  font-weight:600;
 }
 
-.amount.plus{
-  color:#0a8a3a;
-  font-weight:bold;
+.item input{
+  color:var(--text);
+}
+
+.amount input{
+  text-align:right;
+  font-weight:700;
 }
 
 .balance{
-  font-weight:bold;
+  text-align:right;
+  font-weight:700;
+  white-space:nowrap;
 }
 
-button{
-  margin-top:20px;
-  padding:12px 18px;
+.minus input{
+  color:var(--minus);
+}
+
+.plus input{
+  color:var(--plus);
+}
+
+.bottomBar{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  padding:
+    12px
+    16px
+    calc(12px + env(safe-area-inset-bottom));
+  background:rgba(255,255,255,0.8);
+  backdrop-filter:blur(20px);
+}
+
+@media (prefers-color-scheme: dark){
+
+  .bottomBar{
+    background:rgba(28,28,30,0.8);
+  }
+
+}
+
+.addBtn{
+  width:100%;
+  max-width:430px;
+  margin:auto;
+  display:block;
   border:none;
-  border-radius:12px;
-  background:#333;
+  border-radius:16px;
+  padding:16px;
+  font-size:17px;
+  font-weight:700;
+  background:#007aff;
   color:white;
-  font-size:16px;
-  cursor:pointer;
 }
 
-button:hover{
-  opacity:0.9;
+.summary{
+  margin-bottom:14px;
+  display:flex;
+  gap:10px;
 }
+
+.summaryCard{
+  flex:1;
+  background:var(--card);
+  border-radius:16px;
+  padding:14px;
+  border:1px solid var(--line);
+}
+
+.summaryLabel{
+  font-size:12px;
+  color:var(--sub);
+  margin-bottom:6px;
+}
+
+.summaryValue{
+  font-size:20px;
+  font-weight:700;
+}
+
 </style>
 </head>
 
 <body>
 
 <div class="container">
+
   <h1>支出入管理</h1>
 
+  <div class="summary">
+    <div class="summaryCard">
+      <div class="summaryLabel">現在残高</div>
+      <div class="summaryValue" id="totalBalance">0円</div>
+    </div>
+  </div>
+
   <div class="card">
-    <table id="moneyTable">
+
+    <table>
+
       <thead>
         <tr>
           <th>日付</th>
@@ -100,27 +221,36 @@ button:hover{
         </tr>
       </thead>
 
-      <tbody id="tableBody">
-      </tbody>
+      <tbody id="tableBody"></tbody>
+
     </table>
 
-    <button onclick="addRow()">＋ 行を追加</button>
   </div>
+
+</div>
+
+<div class="bottomBar">
+  <button class="addBtn" onclick="addRow()">
+    ＋ 追加
+  </button>
 </div>
 
 <script>
 
 let data = JSON.parse(localStorage.getItem("moneyData")) || [
-  {date:"5/17", item:"初期残高", amount:250086},
+
+  {date:"5/17", item:"開始残高", amount:250086},
   {date:"5/26", item:"LIFE", amount:-22526},
   {date:"5/27", item:"三井住友", amount:-113457},
   {date:"6/10", item:"dカード", amount:-9221},
   {date:"6/15", item:"給料", amount:200000},
+
 ];
 
 function renderTable(){
 
   const tbody = document.getElementById("tableBody");
+
   tbody.innerHTML = "";
 
   let balance = 0;
@@ -134,31 +264,41 @@ function renderTable(){
     const amountClass = row.amount >= 0 ? "plus" : "minus";
 
     tr.innerHTML = `
-      <td>
-        <input value="${row.date}"
+
+      <td class="date">
+        <input
+          value="${row.date}"
           onchange="updateRow(${index}, 'date', this.value)">
       </td>
 
-      <td>
-        <input value="${row.item}"
+      <td class="item">
+        <input
+          value="${row.item}"
           onchange="updateRow(${index}, 'item', this.value)">
       </td>
 
       <td class="amount ${amountClass}">
-        <input type="number"
+        <input
+          type="number"
           value="${row.amount}"
           onchange="updateRow(${index}, 'amount', this.value)">
       </td>
 
       <td class="balance">
-        ${balance.toLocaleString()} 円
+        ${balance.toLocaleString()}円
       </td>
+
     `;
 
     tbody.appendChild(tr);
+
   });
 
+  document.getElementById("totalBalance").innerText =
+    balance.toLocaleString() + "円";
+
   saveData();
+
 }
 
 function updateRow(index,key,value){
@@ -170,6 +310,7 @@ function updateRow(index,key,value){
   }
 
   renderTable();
+
 }
 
 function addRow(){
@@ -181,10 +322,16 @@ function addRow(){
   });
 
   renderTable();
+
 }
 
 function saveData(){
-  localStorage.setItem("moneyData", JSON.stringify(data));
+
+  localStorage.setItem(
+    "moneyData",
+    JSON.stringify(data)
+  );
+
 }
 
 renderTable();
