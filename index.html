@@ -1,69 +1,195 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>支出入管理</title>
+
 <style>
-  body { font-family: sans-serif; }
-  .container {
-    display: flex;
-    gap: 10px;
-  }
-  .box {
-    flex: 1;
-    border: 1px solid #ccc;
-    padding: 10px;
-  }
-  @media (max-width: 600px) {
-    .container { flex-direction: column; }
-  }
+body{
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:#f5f5f5;
+  padding:20px;
+  color:#333;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+}
+
+h1{
+  margin-bottom:20px;
+}
+
+.card{
+  background:white;
+  border-radius:16px;
+  padding:20px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.05);
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  border-bottom:1px solid #eee;
+  padding:14px;
+  text-align:left;
+  font-size:18px;
+}
+
+th{
+  background:#fafafa;
+}
+
+input{
+  width:100%;
+  border:none;
+  font-size:18px;
+  background:transparent;
+  outline:none;
+}
+
+.amount.minus{
+  color:#d33;
+  font-weight:bold;
+}
+
+.amount.plus{
+  color:#0a8a3a;
+  font-weight:bold;
+}
+
+.balance{
+  font-weight:bold;
+}
+
+button{
+  margin-top:20px;
+  padding:12px 18px;
+  border:none;
+  border-radius:12px;
+  background:#333;
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+}
+
+button:hover{
+  opacity:0.9;
+}
 </style>
 </head>
 
 <body>
+
 <div class="container">
+  <h1>支出入管理</h1>
 
-  <!-- 左：ポイ活MAX -->
-  <div class="box">
-    <h2>ポイ活MAX</h2>
-    基本料金：<input type="number" id="leftBase" value="7480"><br><br>
+  <div class="card">
+    <table id="moneyTable">
+      <thead>
+        <tr>
+          <th>日付</th>
+          <th>項目</th>
+          <th>支出入</th>
+          <th>残高</th>
+        </tr>
+      </thead>
 
-    <label>
-      <input type="checkbox" class="leftDiscount" value="1100">
-      みんなドコモ割（-1100円）
-    </label><br>
+      <tbody id="tableBody">
+      </tbody>
+    </table>
 
-    <label>
-      <input type="checkbox" class="leftDiscount" value="550">
-      dカード割（-550円）
-    </label><br><br>
-
-    <strong>最終金額：<span id="leftResult">7480</span>円</strong>
+    <button onclick="addRow()">＋ 行を追加</button>
   </div>
-
-  <!-- 右：他プラン -->
-  <div class="box">
-    <h2><input placeholder="プラン名"></h2>
-    基本料金：<input type="number" id="rightBase"><br><br>
-
-    <strong>最終金額：<span id="rightResult">0</span>円</strong>
-  </div>
-
 </div>
 
 <script>
-function calc() {
-  // 左
-  let left = Number(leftBase.value);
-  document.querySelectorAll('.leftDiscount').forEach(d => {
-    if (d.checked) left -= Number(d.value);
-  });
-  leftResult.textContent = left;
 
-  // 右
-  rightResult.textContent = rightBase.value || 0;
+let data = JSON.parse(localStorage.getItem("moneyData")) || [
+  {date:"5/17", item:"初期残高", amount:250086},
+  {date:"5/26", item:"LIFE", amount:-22526},
+  {date:"5/27", item:"三井住友", amount:-113457},
+  {date:"6/10", item:"dカード", amount:-9221},
+  {date:"6/15", item:"給料", amount:200000},
+];
+
+function renderTable(){
+
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = "";
+
+  let balance = 0;
+
+  data.forEach((row,index)=>{
+
+    balance += Number(row.amount);
+
+    const tr = document.createElement("tr");
+
+    const amountClass = row.amount >= 0 ? "plus" : "minus";
+
+    tr.innerHTML = `
+      <td>
+        <input value="${row.date}"
+          onchange="updateRow(${index}, 'date', this.value)">
+      </td>
+
+      <td>
+        <input value="${row.item}"
+          onchange="updateRow(${index}, 'item', this.value)">
+      </td>
+
+      <td class="amount ${amountClass}">
+        <input type="number"
+          value="${row.amount}"
+          onchange="updateRow(${index}, 'amount', this.value)">
+      </td>
+
+      <td class="balance">
+        ${balance.toLocaleString()} 円
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+
+  saveData();
 }
 
-document.addEventListener('input', calc);
+function updateRow(index,key,value){
+
+  if(key === "amount"){
+    data[index][key] = Number(value);
+  }else{
+    data[index][key] = value;
+  }
+
+  renderTable();
+}
+
+function addRow(){
+
+  data.push({
+    date:"",
+    item:"",
+    amount:0
+  });
+
+  renderTable();
+}
+
+function saveData(){
+  localStorage.setItem("moneyData", JSON.stringify(data));
+}
+
+renderTable();
+
 </script>
+
 </body>
 </html>
