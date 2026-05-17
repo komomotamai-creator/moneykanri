@@ -40,6 +40,7 @@ body{
   background:var(--bg);
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   color:var(--text);
+
   padding:
     env(safe-area-inset-top)
     12px
@@ -55,6 +56,28 @@ body{
 h1{
   font-size:26px;
   margin:8px 4px 16px;
+  font-weight:700;
+}
+
+.summary{
+  margin-bottom:14px;
+}
+
+.summaryCard{
+  background:var(--card);
+  border-radius:16px;
+  padding:14px;
+  border:1px solid var(--line);
+}
+
+.summaryLabel{
+  font-size:12px;
+  color:var(--sub);
+  margin-bottom:6px;
+}
+
+.summaryValue{
+  font-size:20px;
   font-weight:700;
 }
 
@@ -85,13 +108,11 @@ th{
   border-bottom:1px solid var(--line);
 }
 
-td{
-  padding:12px 8px;
+tbody tr{
   border-bottom:1px solid var(--line);
-  font-size:14px;
 }
 
-tr:last-child td{
+tbody tr:last-child{
   border-bottom:none;
 }
 
@@ -124,39 +145,77 @@ input{
   color:var(--plus);
 }
 
-.summary{
-  margin-bottom:14px;
-}
+.rowGrid{
 
-.summaryCard{
+  display:grid;
+
+  grid-template-columns:
+    70px
+    1fr
+    100px
+    100px;
+
+  align-items:center;
+
+  min-height:68px;
+
+  padding:0 8px;
+
   background:var(--card);
-  border-radius:16px;
-  padding:14px;
-  border:1px solid var(--line);
+
 }
 
-.summaryLabel{
-  font-size:12px;
-  color:var(--sub);
-  margin-bottom:6px;
+.swipeRow{
+  position:relative;
+  z-index:2;
+  background:var(--card);
+  transition:transform .2s ease;
 }
 
-.summaryValue{
-  font-size:20px;
+.deleteBackground{
+
+  position:absolute;
+
+  top:0;
+  right:0;
+  bottom:0;
+
+  width:100px;
+
+  background:#ff3b30;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  color:white;
   font-weight:700;
+
+  z-index:1;
+
+}
+
+.dragging{
+  opacity:.5;
 }
 
 .bottomBar{
+
   position:fixed;
+
   left:0;
   right:0;
   bottom:0;
+
   padding:
     12px
     16px
     calc(12px + env(safe-area-inset-bottom));
+
   background:rgba(255,255,255,0.8);
+
   backdrop-filter:blur(20px);
+
 }
 
 @media (prefers-color-scheme: dark){
@@ -168,45 +227,25 @@ input{
 }
 
 .addBtn{
+
   width:100%;
   max-width:430px;
+
   margin:auto;
   display:block;
+
   border:none;
+
   border-radius:16px;
+
   padding:16px;
+
   font-size:17px;
   font-weight:700;
+
   background:#007aff;
   color:white;
-}
 
-.swipeRow{
-  transition:transform .2s ease;
-  background:var(--card);
-}
-
-.dragging{
-  opacity:.5;
-}
-
-.deleteBackground{
-  position:absolute;
-  right:0;
-  top:0;
-  bottom:0;
-  width:90px;
-  background:#ff3b30;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:white;
-  font-weight:700;
-}
-
-.rowWrapper{
-  position:relative;
-  overflow:hidden;
 }
 
 </style>
@@ -219,10 +258,19 @@ input{
   <h1>支出入管理</h1>
 
   <div class="summary">
+
     <div class="summaryCard">
-      <div class="summaryLabel">最終残高</div>
-      <div class="summaryValue" id="totalBalance">0円</div>
+
+      <div class="summaryLabel">
+        最終残高
+      </div>
+
+      <div class="summaryValue" id="totalBalance">
+        0円
+      </div>
+
     </div>
+
   </div>
 
   <div class="card">
@@ -247,26 +295,55 @@ input{
 </div>
 
 <div class="bottomBar">
+
   <button class="addBtn" onclick="addRow()">
     ＋ 追加
   </button>
+
 </div>
 
 <script>
 
-let data = JSON.parse(localStorage.getItem("moneyData")) || [
+let data = JSON.parse(
+  localStorage.getItem("moneyData")
+) || [
 
-  {date:"5/17", item:"開始残高", amount:250086},
-  {date:"5/26", item:"LIFE", amount:-22526},
-  {date:"5/27", item:"三井住友", amount:-113457},
-  {date:"6/10", item:"dカード", amount:-9221},
-  {date:"6/15", item:"給料", amount:200000},
+  {
+    date:"5/17",
+    item:"初期残高",
+    amount:250086
+  },
+
+  {
+    date:"5/26",
+    item:"三井住友",
+    amount:-22526
+  },
+
+  {
+    date:"5/27",
+    item:"LIFE",
+    amount:-113457
+  },
+
+  {
+    date:"6/10",
+    item:"dカード",
+    amount:-9221
+  },
+
+  {
+    date:"6/15",
+    item:"給料",
+    amount:200000
+  }
 
 ];
 
 function renderTable(){
 
-  const tbody = document.getElementById("tableBody");
+  const tbody =
+    document.getElementById("tableBody");
 
   tbody.innerHTML = "";
 
@@ -277,166 +354,244 @@ function renderTable(){
     balance += Number(row.amount);
 
     const amountClass =
-      row.amount >= 0 ? "plus" : "minus";
+      row.amount >= 0
+      ? "plus"
+      : "minus";
 
-    const wrapper = document.createElement("tr");
+    const tr =
+      document.createElement("tr");
 
-    wrapper.className = "rowWrapper";
-    wrapper.draggable = true;
+    tr.draggable = true;
 
-    wrapper.innerHTML = `
+    tr.innerHTML = `
 
-      <td colspan="4" style="padding:0;">
+      <td colspan="4"
+        style="
+          padding:0;
+          position:relative;
+          overflow:hidden;
+        ">
 
         <div class="deleteBackground">
           削除
         </div>
 
-        <table style="width:100%;">
-          <tr class="swipeRow">
+        <div class="swipeRow">
 
-            <td>
+          <div class="rowGrid">
+
+            <div>
+
               <input
                 value="${row.date}"
-                onchange="updateRow(${index}, 'date', this.value)">
-            </td>
+                onchange="
+                  updateRow(
+                    ${index},
+                    'date',
+                    this.value
+                  )
+                ">
 
-            <td>
+            </div>
+
+            <div>
+
               <input
                 value="${row.item}"
-                onchange="updateRow(${index}, 'item', this.value)">
-            </td>
+                onchange="
+                  updateRow(
+                    ${index},
+                    'item',
+                    this.value
+                  )
+                ">
 
-            <td class="amount ${amountClass}">
+            </div>
+
+            <div class="amount ${amountClass}">
+
               <input
                 type="number"
+
                 value="${row.amount}"
-                onchange="updateRow(${index}, 'amount', this.value)">
-            </td>
 
-            <td class="balance">
+                onchange="
+                  updateRow(
+                    ${index},
+                    'amount',
+                    this.value
+                  )
+                ">
+
+            </div>
+
+            <div class="balance">
               ${balance.toLocaleString()}円
-            </td>
+            </div>
 
-          </tr>
-        </table>
+          </div>
+
+        </div>
 
       </td>
 
     `;
 
-    tbody.appendChild(wrapper);
+    tbody.appendChild(tr);
 
-    setupSwipe(wrapper,index);
+    setupSwipe(tr,index);
 
-    setupDrag(wrapper,index);
+    setupDrag(tr,index);
 
   });
 
-  document.getElementById("totalBalance").innerText =
+  document.getElementById(
+    "totalBalance"
+  ).innerText =
     balance.toLocaleString() + "円";
 
   saveData();
 
 }
 
-function setupSwipe(wrapper,index){
+function setupSwipe(tr,index){
 
-  const swipeRow = wrapper.querySelector(".swipeRow");
+  const swipeRow =
+    tr.querySelector(".swipeRow");
 
   let startX = 0;
   let currentX = 0;
 
-  swipeRow.addEventListener("touchstart",(e)=>{
+  swipeRow.addEventListener(
+    "touchstart",
+    (e)=>{
 
-    startX = e.touches[0].clientX;
-
-  });
-
-  swipeRow.addEventListener("touchmove",(e)=>{
-
-    currentX = e.touches[0].clientX;
-
-    const diff = currentX - startX;
-
-    if(diff < 0){
-
-      swipeRow.style.transform =
-        `translateX(${diff}px)`;
+      startX =
+        e.touches[0].clientX;
 
     }
+  );
 
-  });
+  swipeRow.addEventListener(
+    "touchmove",
+    (e)=>{
 
-  swipeRow.addEventListener("touchend",()=>{
+      currentX =
+        e.touches[0].clientX;
 
-    const diff = currentX - startX;
+      const diff =
+        currentX - startX;
 
-    if(diff < -100){
+      if(diff < 0){
 
-      if(confirm("削除しますか？")){
-
-        data.splice(index,1);
-
-        renderTable();
+        swipeRow.style.transform =
+          `translateX(${diff}px)`;
 
       }
 
-    }else{
+    }
+  );
 
-      swipeRow.style.transform =
-        "translateX(0px)";
+  swipeRow.addEventListener(
+    "touchend",
+    ()=>{
+
+      const diff =
+        currentX - startX;
+
+      if(diff < -100){
+
+        if(confirm("削除しますか？")){
+
+          data.splice(index,1);
+
+          renderTable();
+
+        }
+
+      }else{
+
+        swipeRow.style.transform =
+          "translateX(0px)";
+
+      }
 
     }
-
-  });
+  );
 
 }
 
 let dragIndex = null;
 
-function setupDrag(wrapper,index){
+function setupDrag(tr,index){
 
-  wrapper.addEventListener("dragstart",()=>{
+  tr.addEventListener(
+    "dragstart",
+    ()=>{
 
-    dragIndex = index;
+      dragIndex = index;
 
-    wrapper.classList.add("dragging");
+      tr.classList.add("dragging");
 
-  });
+    }
+  );
 
-  wrapper.addEventListener("dragend",()=>{
+  tr.addEventListener(
+    "dragend",
+    ()=>{
 
-    wrapper.classList.remove("dragging");
+      tr.classList.remove("dragging");
 
-  });
+    }
+  );
 
-  wrapper.addEventListener("dragover",(e)=>{
+  tr.addEventListener(
+    "dragover",
+    (e)=>{
 
-    e.preventDefault();
+      e.preventDefault();
 
-  });
+    }
+  );
 
-  wrapper.addEventListener("drop",()=>{
+  tr.addEventListener(
+    "drop",
+    ()=>{
 
-    if(dragIndex === null) return;
+      if(dragIndex === null)
+        return;
 
-    const movedItem = data.splice(dragIndex,1)[0];
+      const movedItem =
+        data.splice(
+          dragIndex,
+          1
+        )[0];
 
-    data.splice(index,0,movedItem);
+      data.splice(
+        index,
+        0,
+        movedItem
+      );
 
-    renderTable();
+      renderTable();
 
-  });
+    }
+  );
 
 }
 
 function updateRow(index,key,value){
 
   if(key === "amount"){
-    data[index][key] = Number(value);
+
+    data[index][key] =
+      Number(value);
+
   }else{
-    data[index][key] = value;
+
+    data[index][key] =
+      value;
+
   }
 
   renderTable();
@@ -446,9 +601,11 @@ function updateRow(index,key,value){
 function addRow(){
 
   data.push({
+
     date:"",
     item:"",
     amount:0
+
   });
 
   renderTable();
